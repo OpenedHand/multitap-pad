@@ -332,7 +332,7 @@ main (int argc, char **argv)
 	}
 	
 	/* Create keypad table */
-	table = gtk_table_new (5, 6, TRUE);
+	table = gtk_table_new (4, 7, TRUE);
 	
 	/* Create buttons */
 	button = new_button ("1\n<small>.,-?!</small>", FALSE,
@@ -385,11 +385,15 @@ main (int argc, char **argv)
 
 	button = new_button (GTK_STOCK_GO_BACK, TRUE,
 		XK_BackSpace, 0, XK_BackSpace, FAKEKEYMOD_CONTROL, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 3, 4, 5);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 6, 7, 0, 1);
+
+	button = new_button (GTK_STOCK_GO_FORWARD, TRUE,
+		XK_Right, 0, XK_Right, FAKEKEYMOD_CONTROL, fk);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 6, 7, 1, 2);
 	
 	button = new_button (GTK_STOCK_OK, TRUE,
 		XK_Return, 0, XK_Return, FAKEKEYMOD_CONTROL, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 3, 6, 4, 5);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 6, 7, 2, 4);
 
 	/* Pack and show widgets */
 	gtk_container_add (GTK_CONTAINER (window), table);

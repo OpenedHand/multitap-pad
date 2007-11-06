@@ -1,5 +1,10 @@
 2007-11-06  Chris Lord  <chris@openedhand.com>
 
+	* src/multitap-pad-main.c: (main):
+	Change layout slightly, add a 'forward' key
+
+2007-11-06  Chris Lord  <chris@openedhand.com>
+
 	* src/multitap-pad-main.c: (new_button):
 	Use an image packed into a button instead of the stock button
 
