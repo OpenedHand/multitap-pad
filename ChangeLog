@@ -1,0 +1,7 @@
+2007-11-06  Chris Lord  <chris@openedhand.com>
+
+	* applet/applet.c: (mb_panel_applet_create):
+	Fix applet name
+
+	* src/multitap-pad-main.c: (new_button), (invoke_cb), (main):
+	Fix remote command event filtering and add backspace/return keys

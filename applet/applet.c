@@ -37,7 +37,7 @@ mb_panel_applet_create (const char *id, GtkOrientation orientation)
   gtk_event_box_set_visible_window (GTK_EVENT_BOX (box), FALSE);
   gtk_widget_set_name (box, "MatchboxPanelKeyboard");
 
-  image = mb_panel_scaling_image_new (orientation, "matchbox-keyboard");
+  image = mb_panel_scaling_image_new (orientation, "multitap-pad");
   gtk_container_add (GTK_CONTAINER (box), image);
 
   g_signal_connect (box, "button-release-event", G_CALLBACK (on_toggled), NULL);

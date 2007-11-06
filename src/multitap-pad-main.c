@@ -160,19 +160,22 @@ set_button_data (GtkWidget *button, guint keysym, guint flags, guint altkeysym,
 }
 
 static GtkWidget *
-new_button (const gchar *markup, guint keysym, guint flags,
+new_button (const gchar *text, gboolean stock, guint keysym, guint flags,
 	    guint altkeysym, guint altflags, FakeKey *fk)
 {
-	GtkWidget *button, *label;
+	GtkWidget *button;
 	
-	button = gtk_button_new ();
-	
-	label = gtk_label_new (NULL);
-	gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_CENTER);
-	gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
-	gtk_label_set_markup (GTK_LABEL (label), markup);
-	
-	gtk_container_add (GTK_CONTAINER (button), label);
+	if (stock) {
+		button = gtk_button_new_from_stock (text);
+	} else {
+		GtkWidget *label;
+		button = gtk_button_new ();
+		label = gtk_label_new (NULL);
+		gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_CENTER);
+		gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
+		gtk_label_set_markup (GTK_LABEL (label), text);
+		gtk_container_add (GTK_CONTAINER (button), label);
+	}
 	
 	set_button_data (button, keysym, flags, altkeysym, altflags, fk);
 
@@ -209,10 +212,10 @@ new_toggle_button (const gchar *markup, guint keysym, guint flags,
 	return button;
 }
 
-static gboolean
-client_event_cb (GtkWidget *widget, GdkEventClient *event)
+static GdkFilterReturn
+invoke_cb (GdkXEvent *xevent, GdkEvent *event, GtkWidget *widget)
 {
-	switch (event->data.l[0]) {
+	switch (((XEvent *)xevent)->xclient.data.l[0]) {
 	    case MTPRemoteShow :
 		gtk_widget_show (widget);
 		break;
@@ -226,7 +229,8 @@ client_event_cb (GtkWidget *widget, GdkEventClient *event)
 	    case MTPRemoteNone :
 		break;
 	}
-	return FALSE;
+	
+	return GDK_FILTER_REMOVE;
 }
 
 int
@@ -234,82 +238,97 @@ main (int argc, char **argv)
 {
 	FakeKey *fk;
 	GtkWidget *window, *table, *button;
+	GdkGeometry geom;
 	
 	gtk_init (&argc, &argv);
 	
 	/* Create FakeKey context */
 	fk = fakekey_init (gdk_x11_get_default_xdisplay ());
 	
-	/* Add remote command atom */
-	gdk_atom_intern_static_string ("_MTP_IM_INVOKER_COMMAND");
-	
 	/* Create main window */
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_type_hint (GTK_WINDOW (window),
 		GDK_WINDOW_TYPE_HINT_DOCK);
-	gtk_window_set_gravity (GTK_WINDOW (window), GDK_GRAVITY_SOUTH);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
 	gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
 
-	g_signal_connect (window, "client-event",
-		G_CALLBACK (client_event_cb), NULL);
+	/* Set geometry hints */
+	geom.win_gravity = GDK_GRAVITY_SOUTH;
+	gtk_window_set_geometry_hints (GTK_WINDOW (window), window,
+		&geom, GDK_HINT_WIN_GRAVITY);
+
 	g_signal_connect (window, "delete-event",
 		G_CALLBACK (gtk_main_quit), NULL);
 	
+	/* Add event filter for remote command */
+	gdk_window_set_events (gdk_get_default_root_window (),
+		GDK_SUBSTRUCTURE_MASK);
+	gdk_add_client_message_filter (
+		gdk_atom_intern ("_MTP_IM_INVOKER_COMMAND", FALSE),
+		(GdkFilterFunc)invoke_cb, window);
+	
 	/* Create keypad table */
-	table = gtk_table_new (4, 3, TRUE);
+	table = gtk_table_new (5, 6, TRUE);
 	
 	/* Create buttons */
-	button = new_button ("1\n<small>.,-?!</small>",
+	button = new_button ("1\n<small>.,-?!</small>", FALSE,
 		XK_period, 0, XK_1, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 1, 0, 1);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 0, 1);
 
-	button = new_button ("2\n<small>abc</small>",
+	button = new_button ("2\n<small>abc</small>", FALSE,
 		XK_a, 0, XK_2, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 1, 2, 0, 1);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 0, 1);
 
-	button = new_button ("3\n<small>def</small>",
+	button = new_button ("3\n<small>def</small>", FALSE,
 		XK_d, 0, XK_3, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 3, 0, 1);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 0, 1);
 
-	button = new_button ("4\n<small>ghi</small>",
+	button = new_button ("4\n<small>ghi</small>", FALSE,
 		XK_g, 0, XK_4, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 1, 1, 2);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 1, 2);
 
-	button = new_button ("5\n<small>jkl</small>",
+	button = new_button ("5\n<small>jkl</small>", FALSE,
 		XK_j, 0, XK_5, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 1, 2, 1, 2);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 1, 2);
 
-	button = new_button ("6\n<small>mno</small>",
+	button = new_button ("6\n<small>mno</small>", FALSE,
 		XK_m, 0, XK_6, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 3, 1, 2);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 1, 2);
 
-	button = new_button ("7\n<small>pqrs</small>",
+	button = new_button ("7\n<small>pqrs</small>", FALSE,
 		XK_p, 0, XK_7, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 1, 2, 3);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 2, 3);
 
-	button = new_button ("8\n<small>tuv</small>",
+	button = new_button ("8\n<small>tuv</small>", FALSE,
 		XK_t, 0, XK_8, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 1, 2, 2, 3);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 2, 3);
 
-	button = new_button ("9\n<small>wxyz</small>",
+	button = new_button ("9\n<small>wxyz</small>", FALSE,
 		XK_w, 0, XK_9, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 3, 2, 3);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 2, 3);
 
 	button = new_toggle_button ("*\n<small>^</small>",
 		XK_Caps_Lock, 0, XK_asterisk, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 1, 3, 4);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 3, 4);
 
-	button = new_button ("0\n<small>+</small>",
+	button = new_button ("0\n<small>+</small>", FALSE,
 		XK_KP_Add, 0, XK_0, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 1, 2, 3, 4);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 3, 4);
 
-	button = new_button ("#\n<small>_</small>",
+	button = new_button ("#\n<small>_</small>", FALSE,
 		XK_space, 0, XK_numbersign, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 3, 3, 4);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 3, 4);
+
+	button = new_button (GTK_STOCK_GO_BACK, TRUE,
+		XK_BackSpace, 0, XK_BackSpace, FAKEKEYMOD_CONTROL, fk);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 3, 4, 5);
 	
+	button = new_button (GTK_STOCK_OK, TRUE,
+		XK_Return, 0, XK_Return, FAKEKEYMOD_CONTROL, fk);
+	gtk_table_attach_defaults (GTK_TABLE (table), button, 3, 6, 4, 5);
+
 	/* Pack and show widgets */
 	gtk_container_add (GTK_CONTAINER (window), table);
 	gtk_widget_show_all (window);
