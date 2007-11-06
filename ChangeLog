@@ -1,6 +1,12 @@
 2007-11-06  Chris Lord  <chris@openedhand.com>
 
 	* src/multitap-pad-main.c: (screen_size_changed_cb), (main):
+	Fix landscape orientation, add non-working --position option, change
+	--plug option to --xembed
+
+2007-11-06  Chris Lord  <chris@openedhand.com>
+
+	* src/multitap-pad-main.c: (screen_size_changed_cb), (main):
 	Add arguments --daemon, --orientation and --plug, set default
 	orientation to portrait
 

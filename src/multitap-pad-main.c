@@ -3,7 +3,7 @@
 #include <gdk/gdkx.h>
 #include "multitap-pad-remote.h"
 
-static gchar *orientation;
+static gchar *orientation = NULL, *position = NULL;
 
 static gboolean
 alt_keypress_timeout (GtkWidget *button)
@@ -238,13 +238,34 @@ invoke_cb (GdkXEvent *xevent, GdkEvent *event, GtkWidget *widget)
 static void
 screen_size_changed_cb (GdkScreen *screen, GtkWidget *window)
 {
-	if (orientation && (strcmp (orientation, "landscape") == 0)) {
+	/* Set size */
+	if (orientation && (strcasecmp (orientation, "landscape") == 0)) {
+		gtk_window_set_type_hint (GTK_WINDOW (window),
+			GDK_WINDOW_TYPE_HINT_DOCK);
 		gtk_window_resize (GTK_WINDOW (window), 1,
-			gdk_screen_get_height (gdk_screen_get_default ()));
+			gdk_screen_get_height (screen));
 	} else {
-		gtk_window_resize (GTK_WINDOW (window), gdk_screen_get_width (
-			gdk_screen_get_default ()), 1);
+		gtk_window_set_type_hint (GTK_WINDOW (window),
+			GDK_WINDOW_TYPE_HINT_TOOLBAR);
+		gtk_window_resize (GTK_WINDOW (window),
+			gdk_screen_get_width (screen), 1);
 	}
+
+	/* Set position */
+	if ((!position) || (strcasecmp (position, "south") == 0)) {
+		gtk_window_set_gravity (GTK_WINDOW (window),
+			GDK_GRAVITY_SOUTH_WEST);
+	} else if (strcasecmp (position, "north") == 0) {
+		gtk_window_set_gravity (GTK_WINDOW (window),
+			GDK_GRAVITY_NORTH_WEST);
+	} else if (strcasecmp (position, "east") == 0) {
+		gtk_window_set_gravity (GTK_WINDOW (window),
+			GDK_GRAVITY_SOUTH_EAST);
+	} else if (strcasecmp (position, "west") == 0) {
+		gtk_window_set_gravity (GTK_WINDOW (window),
+			GDK_GRAVITY_NORTH_WEST);
+	}
+	gtk_window_move (GTK_WINDOW (window), 0, 0);
 }
 
 int
@@ -253,7 +274,7 @@ main (int argc, char **argv)
 	FakeKey *fk;
 	GtkWidget *window, *table, *button;
 	GOptionContext *context;
-	static gboolean daemon;
+	static gboolean daemon = FALSE;
 	static gint plug = 0;
 	
 	static GOptionEntry entries[] = {
@@ -261,7 +282,9 @@ main (int argc, char **argv)
 			"Run in 'daemon' mode (for remote control)", NULL },
 		{ "orientation", 'o', 0, G_OPTION_ARG_STRING, &orientation,
 			"<portrait|landscape>", NULL },
-		{ "plug", 'p', 0, G_OPTION_ARG_INT, &plug,
+		{ "position", 'p', 0, G_OPTION_ARG_STRING, &position,
+			"<north|south|east|west>", NULL },
+		{ "xembed", 'x', 0, G_OPTION_ARG_INT, &plug,
 			"Socket ID of an XEmbed socket to plug into", NULL },
 		{ NULL }
 	};
@@ -278,21 +301,14 @@ main (int argc, char **argv)
 	/* Create main window */
 	if (plug <= 0) {
 		window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-		gtk_window_set_type_hint (GTK_WINDOW (window),
-			GDK_WINDOW_TYPE_HINT_DOCK);
 		gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
 		gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
 		gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
 		gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
 
-		/* Set size */
-		if (orientation && (strcmp (orientation, "landscape") == 0)) {
-			gtk_window_resize (GTK_WINDOW (window), 1,
-				gdk_screen_get_height (gdk_screen_get_default ()));
-		} else {
-			gtk_window_resize (GTK_WINDOW (window), gdk_screen_get_width (
-				gdk_screen_get_default ()), 1);
-		}
+		/* Set size and position */
+		screen_size_changed_cb (gdk_screen_get_default (), window);
+	
 		g_signal_connect (gdk_screen_get_default (), "size-changed",
 			G_CALLBACK (screen_size_changed_cb), window);
 
@@ -376,10 +392,10 @@ main (int argc, char **argv)
 
 	/* Pack and show widgets */
 	gtk_container_add (GTK_CONTAINER (window), table);
-	if (daemon)
-		gtk_widget_show_all (table);
-	else
-		gtk_widget_show_all (window);
+	gtk_widget_show_all (table);
+
+	/* Show window/plug */
+	if (!daemon) gtk_widget_show_all (window);
 	
 	/* Start */
 	gtk_main ();
