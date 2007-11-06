@@ -1,5 +1,16 @@
 2007-11-06  Chris Lord  <chris@openedhand.com>
 
+	* gtk-im/Makefile.am:
+	* gtk-im/Makefile.in:
+	* gtk-im/gtkimcontextmultipress.c: (mb_im_context_focus_in),
+	(mb_im_context_focus_out), (gtk_im_context_multipress_class_init):
+	* gtk-im/im-context.c:
+	* gtk-im/im-context.h:
+	Add focus-in/out to the multi-press input method, remove unused
+	im-context.[ch]
+
+2007-11-06  Chris Lord  <chris@openedhand.com>
+
 	* applet/applet.c: (mb_panel_applet_create):
 	Fix applet name
 

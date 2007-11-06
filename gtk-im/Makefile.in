@@ -51,8 +51,7 @@ am__installdirs = "$(DESTDIR)$(imdir)"
 imLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(im_LTLIBRARIES)
 libmtp_im_invoker_la_DEPENDENCIES =
-am_libmtp_im_invoker_la_OBJECTS = libmtp_im_invoker_la-im-context.lo \
-	libmtp_im_invoker_la-im-protocol.lo \
+am_libmtp_im_invoker_la_OBJECTS = libmtp_im_invoker_la-im-protocol.lo \
 	libmtp_im_invoker_la-gtkimcontextmultipress.lo \
 	libmtp_im_invoker_la-immultipress.lo
 libmtp_im_invoker_la_OBJECTS = $(am_libmtp_im_invoker_la_OBJECTS)
@@ -200,7 +199,6 @@ libmtp_im_invoker_la_CPPFLAGS = @MTP_CFLAGS@ -I${top_srcdir}/src \
 libmtp_im_invoker_la_LDFLAGS = -avoid-version
 libmtp_im_invoker_la_LIBADD = @MTP_LIBS@
 libmtp_im_invoker_la_SOURCES = \
-	im-context.h im-context.c \
 	im-protocol.h im-protocol.c \
 	gtkimcontextmultipress.c \
 	gtkimcontextmultipress.h \
@@ -276,7 +274,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmtp_im_invoker_la-gtkimcontextmultipress.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmtp_im_invoker_la-im-context.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmtp_im_invoker_la-im-protocol.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmtp_im_invoker_la-immultipress.Plo@am__quote@
 
@@ -300,13 +297,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-libmtp_im_invoker_la-im-context.lo: im-context.c
-@am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmtp_im_invoker_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmtp_im_invoker_la-im-context.lo -MD -MP -MF $(DEPDIR)/libmtp_im_invoker_la-im-context.Tpo -c -o libmtp_im_invoker_la-im-context.lo `test -f 'im-context.c' || echo '$(srcdir)/'`im-context.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libmtp_im_invoker_la-im-context.Tpo $(DEPDIR)/libmtp_im_invoker_la-im-context.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='im-context.c' object='libmtp_im_invoker_la-im-context.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmtp_im_invoker_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libmtp_im_invoker_la-im-context.lo `test -f 'im-context.c' || echo '$(srcdir)/'`im-context.c
 
 libmtp_im_invoker_la-im-protocol.lo: im-protocol.c
 @am__fastdepCC_TRUE@	$(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmtp_im_invoker_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libmtp_im_invoker_la-im-protocol.lo -MD -MP -MF $(DEPDIR)/libmtp_im_invoker_la-im-protocol.Tpo -c -o libmtp_im_invoker_la-im-protocol.lo `test -f 'im-protocol.c' || echo '$(srcdir)/'`im-protocol.c

@@ -13,7 +13,6 @@ libmtp_im_invoker_la_LDFLAGS = -avoid-version
 libmtp_im_invoker_la_LIBADD = @MTP_LIBS@
 
 libmtp_im_invoker_la_SOURCES = \
-	im-context.h im-context.c \
 	im-protocol.h im-protocol.c \
 	gtkimcontextmultipress.c \
 	gtkimcontextmultipress.h \

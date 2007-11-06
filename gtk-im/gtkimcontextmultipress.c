@@ -17,6 +17,7 @@
  */
 
 #include "gtkimcontextmultipress.h"
+#include "im-protocol.h"
 #include <gtk/gtkimcontext.h>
 #include <gtk/gtkimmodule.h>
 #include <gtk/gtkimcontext.h>
@@ -151,6 +152,24 @@ static void vfunc_get_preedit_string (GtkIMContext   *context,
 					  PangoAttrList **attrs,
 					  gint           *cursor_pos);
 
+static void
+mb_im_context_focus_in (GtkIMContext *context)
+{
+  protocol_send_event (MTPRemoteShow);
+
+  if (GTK_IM_CONTEXT_CLASS (gtk_im_context_multipress_parent_class)->focus_in)
+    GTK_IM_CONTEXT_CLASS (gtk_im_context_multipress_parent_class)->focus_in (context);
+}
+
+static void
+mb_im_context_focus_out (GtkIMContext *context)
+{
+  protocol_send_event (MTPRemoteHide);
+
+  if (GTK_IM_CONTEXT_CLASS (gtk_im_context_multipress_parent_class)->focus_out)
+    GTK_IM_CONTEXT_CLASS (gtk_im_context_multipress_parent_class)->focus_out (context);
+}
+
 static void 
 gtk_im_context_multipress_class_init (GtkImContextMultipressClass *klass)
 {
@@ -164,6 +183,8 @@ gtk_im_context_multipress_class_init (GtkImContextMultipressClass *klass)
   im_context_class->filter_keypress = vfunc_filter_keypress;
   im_context_class->reset = vfunc_reset;
   im_context_class->get_preedit_string = vfunc_get_preedit_string;
+  im_context_class->focus_in = mb_im_context_focus_in;
+  im_context_class->focus_out = mb_im_context_focus_out;
 
   G_OBJECT_CLASS(klass)->finalize = gtk_im_context_multipress_finalize;
 }
