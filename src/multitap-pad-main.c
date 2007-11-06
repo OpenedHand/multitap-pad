@@ -3,6 +3,8 @@
 #include <gdk/gdkx.h>
 #include "multitap-pad-remote.h"
 
+static gchar *orientation;
+
 static gboolean
 alt_keypress_timeout (GtkWidget *button)
 {
@@ -233,41 +235,84 @@ invoke_cb (GdkXEvent *xevent, GdkEvent *event, GtkWidget *widget)
 	return GDK_FILTER_REMOVE;
 }
 
+static void
+screen_size_changed_cb (GdkScreen *screen, GtkWidget *window)
+{
+	if (orientation && (strcmp (orientation, "landscape") == 0)) {
+		gtk_window_resize (GTK_WINDOW (window), 1,
+			gdk_screen_get_height (gdk_screen_get_default ()));
+	} else {
+		gtk_window_resize (GTK_WINDOW (window), gdk_screen_get_width (
+			gdk_screen_get_default ()), 1);
+	}
+}
+
 int
 main (int argc, char **argv)
 {
 	FakeKey *fk;
 	GtkWidget *window, *table, *button;
-	GdkGeometry geom;
+	GOptionContext *context;
+	static gboolean daemon;
+	static gint plug = 0;
 	
+	static GOptionEntry entries[] = {
+		{ "daemon", 'd', 0, G_OPTION_ARG_NONE, &daemon,
+			"Run in 'daemon' mode (for remote control)", NULL },
+		{ "orientation", 'o', 0, G_OPTION_ARG_STRING, &orientation,
+			"<portrait|landscape>", NULL },
+		{ "plug", 'p', 0, G_OPTION_ARG_INT, &plug,
+			"Socket ID of an XEmbed socket to plug into", NULL },
+		{ NULL }
+	};
+
+	context = g_option_context_new (" - A virtual, multi-tap input pad");
+	g_option_context_add_main_entries (context, entries, NULL);
+	g_option_context_add_group (context, gtk_get_option_group (TRUE));
+	g_option_context_parse (context, &argc, &argv, NULL);
 	gtk_init (&argc, &argv);
 	
 	/* Create FakeKey context */
 	fk = fakekey_init (gdk_x11_get_default_xdisplay ());
 	
 	/* Create main window */
-	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_type_hint (GTK_WINDOW (window),
-		GDK_WINDOW_TYPE_HINT_DOCK);
-	gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
-	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
-	gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
-	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
+	if (plug <= 0) {
+		window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+		gtk_window_set_type_hint (GTK_WINDOW (window),
+			GDK_WINDOW_TYPE_HINT_DOCK);
+		gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
+		gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
+		gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
+		gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
 
-	/* Set geometry hints */
-	geom.win_gravity = GDK_GRAVITY_SOUTH;
-	gtk_window_set_geometry_hints (GTK_WINDOW (window), window,
-		&geom, GDK_HINT_WIN_GRAVITY);
+		/* Set size */
+		if (orientation && (strcmp (orientation, "landscape") == 0)) {
+			gtk_window_resize (GTK_WINDOW (window), 1,
+				gdk_screen_get_height (gdk_screen_get_default ()));
+		} else {
+			gtk_window_resize (GTK_WINDOW (window), gdk_screen_get_width (
+				gdk_screen_get_default ()), 1);
+		}
+		g_signal_connect (gdk_screen_get_default (), "size-changed",
+			G_CALLBACK (screen_size_changed_cb), window);
 
-	g_signal_connect (window, "delete-event",
-		G_CALLBACK (gtk_main_quit), NULL);
+		g_signal_connect (window, "delete-event",
+			G_CALLBACK (gtk_main_quit), NULL);
+	} else {
+		g_message ("Plugging into socket %d", plug);
+		window = gtk_plug_new (plug);
+		g_signal_connect (window, "destroy",
+			G_CALLBACK (gtk_main_quit), NULL);
+	}
 	
 	/* Add event filter for remote command */
-	gdk_window_set_events (gdk_get_default_root_window (),
-		GDK_SUBSTRUCTURE_MASK);
-	gdk_add_client_message_filter (
-		gdk_atom_intern ("_MTP_IM_INVOKER_COMMAND", FALSE),
-		(GdkFilterFunc)invoke_cb, window);
+	if (daemon) {
+		gdk_window_set_events (gdk_get_default_root_window (),
+			GDK_SUBSTRUCTURE_MASK);
+		gdk_add_client_message_filter (
+			gdk_atom_intern ("_MTP_IM_INVOKER_COMMAND", FALSE),
+			(GdkFilterFunc)invoke_cb, window);
+	}
 	
 	/* Create keypad table */
 	table = gtk_table_new (5, 6, TRUE);
@@ -331,7 +376,10 @@ main (int argc, char **argv)
 
 	/* Pack and show widgets */
 	gtk_container_add (GTK_CONTAINER (window), table);
-	gtk_widget_show_all (window);
+	if (daemon)
+		gtk_widget_show_all (table);
+	else
+		gtk_widget_show_all (window);
 	
 	/* Start */
 	gtk_main ();
