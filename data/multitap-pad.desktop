@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Multitap
+Comment=Virtual multi-tap keypad
+Exec=multitap-pad
+Type=Application
+Icon=multitap-pad.png
+Categories=Panel;Utility;MB
+X-MB-INPUT-MECHANSIM=True
