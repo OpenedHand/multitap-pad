@@ -162,22 +162,23 @@ set_button_data (GtkWidget *button, guint keysym, guint flags, guint altkeysym,
 }
 
 static GtkWidget *
-new_button (const gchar *text, gboolean stock, guint keysym, guint flags,
+new_button (const gchar *text, gboolean icon, guint keysym, guint flags,
 	    guint altkeysym, guint altflags, FakeKey *fk)
 {
-	GtkWidget *button;
+	GtkWidget *button, *child;
 	
-	if (stock) {
-		button = gtk_button_new_from_stock (text);
+	button = gtk_button_new ();
+	
+	if (icon) {
+		child = gtk_image_new_from_stock (text, GTK_ICON_SIZE_BUTTON);
 	} else {
-		GtkWidget *label;
-		button = gtk_button_new ();
-		label = gtk_label_new (NULL);
-		gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_CENTER);
-		gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
-		gtk_label_set_markup (GTK_LABEL (label), text);
-		gtk_container_add (GTK_CONTAINER (button), label);
+		child = gtk_label_new (NULL);
+		gtk_label_set_justify (GTK_LABEL (child), GTK_JUSTIFY_CENTER);
+		gtk_label_set_use_markup (GTK_LABEL (child), TRUE);
+		gtk_label_set_markup (GTK_LABEL (child), text);
 	}
+	
+	gtk_container_add (GTK_CONTAINER (button), child);
 	
 	set_button_data (button, keysym, flags, altkeysym, altflags, fk);
 
