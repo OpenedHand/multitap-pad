@@ -3,56 +3,141 @@
 #include <gdk/gdkx.h>
 #include "multitap-pad-remote.h"
 
+typedef enum {
+	NORMAL,
+	CAPS,
+	ALT
+} MtpMode;
+
+typedef struct {
+	gchar *text;
+	guint keysym;
+	guint flags;
+} MtpKey;
+
+typedef struct {
+	gchar *orientation;
+	gchar *position;
+	
+	MtpMode mode;
+	gboolean change_mode;
+
+	GtkWidget *alt_button;
+	
+	GList *buttons;
+	
+	FakeKey *fk;
+} MtpData;
+
 static gchar *orientation = NULL, *position = NULL;
+
+static void
+change_mode (MtpData *data)
+{
+	GList *b;
+	const gchar *keyname;
+	
+	switch (data->mode) {
+	    case NORMAL :
+		data->mode = CAPS;
+		keyname = "capskey";
+		break;
+	    case CAPS :
+		data->mode = ALT;
+		keyname = "altkey";
+		break;
+	    default :
+	    case ALT :
+		data->mode = NORMAL;
+		keyname = "key";
+		break;
+	}
+	
+	for (b = data->buttons; b; b = b->next) {
+		GtkWidget *button = (GtkWidget *)b->data;
+		MtpKey *key = g_object_get_data (G_OBJECT (button), keyname);
+		if (key && key->text) {
+			GtkWidget *widget = g_object_get_data (
+				(GObject *)button, "label");
+			if (widget) {
+				gtk_label_set_markup (GTK_LABEL (widget),
+					key->text);
+			} else {
+				widget = g_object_get_data (
+				(GObject *)button, "image");
+				if (widget) {
+					gtk_image_set_from_stock (
+						GTK_IMAGE (widget), key->text,
+						GTK_ICON_SIZE_BUTTON);
+				}
+			}
+		}
+	}
+}
 
 static gboolean
 alt_keypress_timeout (GtkWidget *button)
 {
-	FakeKey *fk = g_object_get_data (G_OBJECT (button), "fk");
-	guint keysym = GPOINTER_TO_UINT(
-		g_object_get_data (G_OBJECT (button), "altkeysym"));
-	guint flags = GPOINTER_TO_UINT(
-		g_object_get_data (G_OBJECT (button), "altflags"));
+	MtpData *data = g_object_get_data (G_OBJECT (button), "data");
+	MtpKey *key = g_object_get_data (G_OBJECT (button), "key");
+	MtpKey *altkey = g_object_get_data (G_OBJECT (button), "altkey");
+
+	/* If this is the mode key, don't change mode */
+	if (button == data->alt_button)
+		data->change_mode = FALSE;
 
 	/* Release old key, backspace and press new key */
-	fakekey_release (fk);
-	fakekey_press_keysym (fk, XK_BackSpace, 0);
-	fakekey_release (fk);
-	fakekey_press_keysym (fk, keysym, flags);
+	if (key && key->keysym) {
+		fakekey_release (data->fk);
+		fakekey_press_keysym (data->fk, XK_BackSpace, 0);
+		fakekey_release (data->fk);
+	}
+	if (altkey && altkey->keysym)
+		fakekey_press_keysym (data->fk, altkey->keysym, altkey->flags);
 	
 	g_object_set_data (G_OBJECT (button), "timeout", NULL);
+	g_object_set_data (G_OBJECT (button), "data", NULL);
 	
 	return FALSE;
 }
 
 static gboolean
-button_press_event_cb (GtkWidget *button, GdkEventButton *event, FakeKey *fk)
+button_press_event_cb (GtkWidget *button, GdkEventButton *event, MtpData *data)
 {
-	guint keysym, flags;
+	MtpKey *key;
 	
 	if (event->type != GDK_BUTTON_PRESS) return FALSE;
+	
+	if (button == data->alt_button)
+		data->change_mode = TRUE;
 
-	keysym = GPOINTER_TO_UINT(g_object_get_data (
-		G_OBJECT (button), "keysym"));
-	flags = GPOINTER_TO_UINT(g_object_get_data (
-		G_OBJECT (button), "flags"));
+	switch (data->mode) {
+	    case NORMAL :
+		key = g_object_get_data (G_OBJECT (button), "key");
+		break;
+	    case CAPS :
+		key = g_object_get_data (G_OBJECT (button), "capskey");
+		break;
+	    default :
+	    case ALT :
+		key = g_object_get_data (G_OBJECT (button), "altkey");
+		break;
+	}
+
+	if (key && key->keysym && (button != data->alt_button)) {
+		fakekey_press_keysym (data->fk, key->keysym, key->flags);
+	}
 	
-	fakekey_press_keysym (fk, keysym, flags);
-	
+	g_object_set_data (G_OBJECT (button), "data", data);
 	g_object_set_data (G_OBJECT (button), "timeout", GUINT_TO_POINTER (
-#if GLIB_CHECK_VERSION(2,14,0)
-		g_timeout_add_seconds (1, (GSourceFunc)
-			alt_keypress_timeout, button)
-#else
-		g_timeout_add (1000, (GSourceFunc)alt_keypress_timeout, button)
-#endif
-		));
+		g_timeout_add (1000,(GSourceFunc)alt_keypress_timeout,button)));
 	
 	return FALSE;
 }
 
 static gboolean
-button_release_event_cb (GtkWidget *button, GdkEventButton *event, FakeKey *fk)
+button_release_event_cb (GtkWidget *button, GdkEventButton *event,
+			 MtpData *data)
 {
 	guint timeout_id;
 	
@@ -62,155 +147,55 @@ button_release_event_cb (GtkWidget *button, GdkEventButton *event, FakeKey *fk)
 	if (timeout_id) {
 		g_source_remove (timeout_id);
 		g_object_set_data (G_OBJECT (button), "timeout", NULL);
+		g_object_set_data (G_OBJECT (button), "data", NULL);
+	}
+	
+	if ((button == data->alt_button) && data->change_mode) {
+		change_mode (data);
 	}
 	
 	/* Release key */
-	fakekey_release (fk);
+	fakekey_release (data->fk);
 	
 	/* FakeKey seems to mess with the button, so guarantee release */
 	gtk_button_released (GTK_BUTTON (button));
-	
+
 	return FALSE;
-}
-
-static gboolean
-toggle_alt_keypress_timeout (GtkWidget *button)
-{
-	FakeKey *fk = g_object_get_data (G_OBJECT (button), "fk");
-	guint keysym = GPOINTER_TO_UINT(
-		g_object_get_data (G_OBJECT (button), "keysym"));
-	guint flags = GPOINTER_TO_UINT(
-		g_object_get_data (G_OBJECT (button), "flags"));
-	guint altkeysym = GPOINTER_TO_UINT(
-		g_object_get_data (G_OBJECT (button), "altkeysym"));
-	guint altflags = GPOINTER_TO_UINT(
-		g_object_get_data (G_OBJECT (button), "altflags"));
-
-	/* Press old key again, then press new key */
-	fakekey_press_keysym (fk, keysym, flags);
-	fakekey_release (fk);
-	fakekey_press_keysym (fk, altkeysym, altflags);
-	fakekey_release (fk);
-	
-	g_object_set_data (G_OBJECT (button), "timeout", NULL);
-	
-	/* Reverse toggle button state */
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button),
-		!gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)));
-	
-	return FALSE;
-}
-
-static gboolean
-toggle_button_press_event_cb (GtkWidget *button, GdkEventButton *event, FakeKey *fk)
-{
-	guint keysym, flags;
-
-	if (event->type != GDK_BUTTON_PRESS) return FALSE;
-
-	keysym = GPOINTER_TO_UINT(g_object_get_data (
-		G_OBJECT (button), "keysym"));
-	flags = GPOINTER_TO_UINT(g_object_get_data (
-		G_OBJECT (button), "flags"));
-
-	fakekey_press_keysym (fk, keysym, flags);
-	fakekey_release (fk);
-	
-	g_object_set_data (G_OBJECT (button), "timeout", GUINT_TO_POINTER (
-#if GLIB_CHECK_VERSION(2,14,0)
-		g_timeout_add_seconds (1, (GSourceFunc)
-			toggle_alt_keypress_timeout, button)
-#else
-		g_timeout_add (1000, (GSourceFunc)
-			toggle_alt_keypress_timeout, button)
-#endif
-		));
-	
-	return FALSE;
-}
-
-static gboolean
-toggle_button_release_event_cb (GtkWidget *button, GdkEventButton *event,
-				FakeKey *fk)
-{
-	guint timeout_id;
-	
-	/* Remove alt keypress timeout */
-	timeout_id = GPOINTER_TO_UINT (g_object_get_data (
-		G_OBJECT (button), "timeout"));
-	if (timeout_id) {
-		g_source_remove (timeout_id);
-		g_object_set_data (G_OBJECT (button), "timeout", NULL);
-	}
-	
-	return FALSE;
-}
-
-static void
-set_button_data (GtkWidget *button, guint keysym, guint flags, guint altkeysym,
-		 guint altflags, FakeKey *fk)
-{
-	g_object_set_data (G_OBJECT (button), "fk", fk);
-	g_object_set_data (G_OBJECT (button),
-		"keysym", GUINT_TO_POINTER (keysym));
-	g_object_set_data (G_OBJECT (button),
-		"flags", GUINT_TO_POINTER (flags));
-	g_object_set_data (G_OBJECT (button),
-		"altkeysym", GUINT_TO_POINTER (altkeysym));
-	g_object_set_data (G_OBJECT (button),
-		"altflags", GUINT_TO_POINTER (altflags));
 }
 
 static GtkWidget *
-new_button (const gchar *text, gboolean icon, guint keysym, guint flags,
-	    guint altkeysym, guint altflags, FakeKey *fk)
+new_button (MtpKey key, MtpKey altkey, MtpKey capskey, gboolean icon,
+	    MtpData *data)
 {
 	GtkWidget *button, *child;
+	MtpKey *key_copy;
 	
 	button = gtk_button_new ();
+	key_copy = g_memdup (&key, sizeof (MtpKey));
+	g_object_set_data (G_OBJECT (button), "key", key_copy);
+	key_copy = g_memdup (&altkey, sizeof (MtpKey));
+	g_object_set_data (G_OBJECT (button), "altkey", key_copy);
+	key_copy = g_memdup (&capskey, sizeof (MtpKey));
+	g_object_set_data (G_OBJECT (button), "capskey", key_copy);
 	
 	if (icon) {
-		child = gtk_image_new_from_stock (text, GTK_ICON_SIZE_BUTTON);
+		child = gtk_image_new_from_stock (
+			key.text, GTK_ICON_SIZE_BUTTON);
+		g_object_set_data (G_OBJECT (button), "image", child);
 	} else {
 		child = gtk_label_new (NULL);
 		gtk_label_set_justify (GTK_LABEL (child), GTK_JUSTIFY_CENTER);
 		gtk_label_set_use_markup (GTK_LABEL (child), TRUE);
-		gtk_label_set_markup (GTK_LABEL (child), text);
+		gtk_label_set_markup (GTK_LABEL (child), key.text);
+		g_object_set_data (G_OBJECT (button), "label", child);
 	}
 	
 	gtk_container_add (GTK_CONTAINER (button), child);
 	
-	set_button_data (button, keysym, flags, altkeysym, altflags, fk);
-
 	g_signal_connect (button, "button-press-event",
-		G_CALLBACK(button_press_event_cb), fk);
+		G_CALLBACK(button_press_event_cb), data);
 	g_signal_connect (button, "button-release-event",
-		G_CALLBACK(button_release_event_cb), fk);
-	
-	return button;
-}
-
-static GtkWidget *
-new_toggle_button (const gchar *markup, guint keysym, guint flags,
-		   guint altkeysym, guint altflags, FakeKey *fk)
-{
-	GtkWidget *button, *label;
-	
-	button = gtk_toggle_button_new ();
-	
-	label = gtk_label_new (NULL);
-	gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_CENTER);
-	gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
-	gtk_label_set_markup (GTK_LABEL (label), markup);
-	
-	gtk_container_add (GTK_CONTAINER (button), label);
-	
-	set_button_data (button, keysym, flags, altkeysym, altflags, fk);
-
-	g_signal_connect (button, "button-press-event",
-		G_CALLBACK(toggle_button_press_event_cb), fk);
-	g_signal_connect (button, "button-release-event",
-		G_CALLBACK(toggle_button_release_event_cb), fk);
+		G_CALLBACK(button_release_event_cb), data);
 	
 	return button;
 }
@@ -272,7 +257,7 @@ screen_size_changed_cb (GdkScreen *screen, GtkWidget *window)
 int
 main (int argc, char **argv)
 {
-	FakeKey *fk;
+	MtpData data;
 	GtkWidget *window, *table, *button;
 	GOptionContext *context;
 	static gboolean daemon = FALSE;
@@ -297,7 +282,7 @@ main (int argc, char **argv)
 	gtk_init (&argc, &argv);
 	
 	/* Create FakeKey context */
-	fk = fakekey_init (gdk_x11_get_default_xdisplay ());
+	data.fk = fakekey_init (gdk_x11_get_default_xdisplay ());
 	
 	/* Create main window */
 	if (plug <= 0) {
@@ -335,64 +320,91 @@ main (int argc, char **argv)
 	table = gtk_table_new (4, 7, TRUE);
 	
 	/* Create buttons */
-	button = new_button ("1\n<small>.,-?!</small>", FALSE,
-		XK_period, 0, XK_1, 0, fk);
+	button = new_button ((MtpKey){ "<small>1\n.,-?!</small>", XK_period, 0},
+		(MtpKey){ "1", XK_1, 0 },
+		(MtpKey){ NULL, XK_period, 0}, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 0, 1);
 
-	button = new_button ("2\n<small>abc</small>", FALSE,
-		XK_a, 0, XK_2, 0, fk);
+	button = new_button ((MtpKey){ "<small>2\nabc</small>", XK_a, 0 },
+		(MtpKey){ "2", XK_2, 0 },
+		(MtpKey){ "<small>2\nABC</small>", XK_A, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 0, 1);
+	data.buttons = g_list_prepend (NULL, button);
 
-	button = new_button ("3\n<small>def</small>", FALSE,
-		XK_d, 0, XK_3, 0, fk);
+	button = new_button ((MtpKey){ "<small>3\ndef</small>", XK_d, 0 },
+		(MtpKey){ "3", XK_3, 0 },
+		(MtpKey){ "<small>3\nDEF</small>", XK_D, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 0, 1);
+	data.buttons = g_list_prepend (data.buttons, button);
 
-	button = new_button ("4\n<small>ghi</small>", FALSE,
-		XK_g, 0, XK_4, 0, fk);
+	button = new_button ((MtpKey){ "<small>4\nghi</small>", XK_g, 0 },
+		(MtpKey){ "4", XK_4, 0 },
+		(MtpKey){ "<small>4\nGHI</small>", XK_G, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 1, 2);
+	data.buttons = g_list_prepend (data.buttons, button);
 
-	button = new_button ("5\n<small>jkl</small>", FALSE,
-		XK_j, 0, XK_5, 0, fk);
+	button = new_button ((MtpKey){ "<small>5\njkl</small>", XK_j, 0 },
+		(MtpKey){ "5", XK_5, 0 },
+		(MtpKey){ "<small>5\nJKL</small>", XK_5, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 1, 2);
+	data.buttons = g_list_prepend (data.buttons, button);
 
-	button = new_button ("6\n<small>mno</small>", FALSE,
-		XK_m, 0, XK_6, 0, fk);
+	button = new_button ((MtpKey){ "<small>6\nmno</small>", XK_m, 0 },
+		(MtpKey){ "6", XK_6, 0 }, 
+		(MtpKey){ "<small>6\nMNO</small>", XK_M, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 1, 2);
+	data.buttons = g_list_prepend (data.buttons, button);
 
-	button = new_button ("7\n<small>pqrs</small>", FALSE,
-		XK_p, 0, XK_7, 0, fk);
+	button = new_button ((MtpKey){ "<small>7\npqrs</small>", XK_p, 0 },
+		(MtpKey){ "7", XK_7, 0 },
+		(MtpKey){ "<small>7\nPQRS</small>", XK_P, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 2, 3);
+	data.buttons = g_list_prepend (data.buttons, button);
 
-	button = new_button ("8\n<small>tuv</small>", FALSE,
-		XK_t, 0, XK_8, 0, fk);
+	button = new_button ((MtpKey){ "<small>8\ntuv</small>", XK_t, 0 },
+		(MtpKey){ "8", XK_8, 0 },
+		(MtpKey){ "<small>8\nTUV</small>", XK_T, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 2, 3);
+	data.buttons = g_list_prepend (data.buttons, button);
 
-	button = new_button ("9\n<small>wxyz</small>", FALSE,
-		XK_w, 0, XK_9, 0, fk);
+	button = new_button ((MtpKey){ "<small>9\nwxyz</small>", XK_w, 0 },
+		(MtpKey){ "9", XK_9, 0 },
+		(MtpKey){ "<small>9\nWXYZ</small>", XK_W, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 2, 3);
+	data.buttons = g_list_prepend (data.buttons, button);
 
-	button = new_toggle_button ("*\n<small>^</small>",
-		XK_Caps_Lock, 0, XK_asterisk, 0, fk);
-	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 3, 4);
+	/* Mode-changing button */
+	data.mode = NORMAL;
+	data.change_mode = FALSE;
+	data.alt_button = new_button ((MtpKey){ "<small>*\n^</small>", 0, 0 },
+		(MtpKey){ NULL, XK_asterisk, 0 },
+		(MtpKey){ NULL, 0, 0 }, FALSE, &data);
+	gtk_table_attach_defaults (GTK_TABLE (table),
+		data.alt_button, 0, 2, 3, 4);
 
-	button = new_button ("0\n<small>+</small>", FALSE,
-		XK_KP_Add, 0, XK_0, 0, fk);
+	button = new_button ((MtpKey){ "<small>0\n+</small>", XK_KP_Add, 0 },
+		(MtpKey){ "0", XK_0, 0 },
+		(MtpKey){ NULL, XK_KP_Add, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 3, 4);
 
-	button = new_button ("#\n<small>_</small>", FALSE,
-		XK_space, 0, XK_numbersign, 0, fk);
+	button = new_button ((MtpKey){ "<small>#\n_</small>", XK_space, 0 },
+		(MtpKey){ "#\n<small>_</small>", XK_numbersign, 0 },
+		(MtpKey){ "#\n<small>_</small>", XK_space, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 3, 4);
 
-	button = new_button (GTK_STOCK_GO_BACK, TRUE,
-		XK_BackSpace, 0, XK_BackSpace, FAKEKEYMOD_CONTROL, fk);
+	button = new_button ((MtpKey){ GTK_STOCK_GO_BACK, XK_BackSpace, 0 },
+		(MtpKey){ NULL, XK_BackSpace, FAKEKEYMOD_CONTROL },
+		(MtpKey){ NULL, XK_BackSpace, 0 }, TRUE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 6, 7, 0, 1);
 
-	button = new_button (GTK_STOCK_GO_FORWARD, TRUE,
-		XK_Right, 0, XK_Right, FAKEKEYMOD_CONTROL, fk);
+	button = new_button ((MtpKey){ GTK_STOCK_GO_FORWARD, XK_Right, 0 },
+		(MtpKey){ NULL, XK_Right, FAKEKEYMOD_CONTROL },
+		(MtpKey){ NULL, XK_Right, 0 }, TRUE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 6, 7, 1, 2);
 	
-	button = new_button (GTK_STOCK_OK, TRUE,
-		XK_Return, 0, XK_Return, FAKEKEYMOD_CONTROL, fk);
+	button = new_button ((MtpKey){ GTK_STOCK_OK, XK_Return, 0 },
+		(MtpKey){ NULL, XK_Return, FAKEKEYMOD_CONTROL },
+		(MtpKey){ NULL, XK_Return, 0 }, TRUE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 6, 7, 2, 4);
 
 	/* Pack and show widgets */

@@ -1,3 +1,13 @@
+2008-01-24  Chris Lord  <chris@openedhand.com>
+
+	* src/multitap-pad-main.c: (change_mode), (alt_keypress_timeout),
+	(button_press_event_cb), (button_release_event_cb), (new_button),
+	(main):
+	Replace the non-working caps toggle key with a working mode-switcher
+	key, implement three modes (normal, caps, alt), change button text
+	when switching modes, don't use g_timeout_add_seconds (what was I
+	thinking?!)
+
 2007-11-06  Chris Lord  <chris@openedhand.com>
 
 	* src/multitap-pad-main.c: (main):
