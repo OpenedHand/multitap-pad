@@ -382,7 +382,7 @@ main (int argc, char **argv)
 
 	button = new_button ((MtpKey){ "<small>5\njkl</small>", XK_j, 0 },
 		(MtpKey){ "5", XK_5, 0 },
-		(MtpKey){ "<small>5\nJKL</small>", XK_5, 0 }, FALSE, &data);
+		(MtpKey){ "<small>5\nJKL</small>", XK_J, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 1, 2);
 	data.buttons = g_list_prepend (data.buttons, button);
 
@@ -421,12 +421,13 @@ main (int argc, char **argv)
 
 	button = new_button ((MtpKey){ "<small>0\n+</small>", XK_KP_Add, 0 },
 		(MtpKey){ "0", XK_0, 0 },
-		(MtpKey){ NULL, XK_KP_Add, 0 }, FALSE, &data);
+		(MtpKey){ NULL, XK_equal, FAKEKEYMOD_SHIFT }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 3, 4);
+	data.buttons = g_list_prepend (data.buttons, button);
 
 	button = new_button ((MtpKey){ "<small>#\n_</small>", XK_space, 0 },
-		(MtpKey){ "#\n<small>_</small>", XK_numbersign, 0 },
-		(MtpKey){ "#\n<small>_</small>", XK_space, 0 }, FALSE, &data);
+		(MtpKey){ NULL, XK_numbersign, 0 },
+		(MtpKey){ NULL, XK_space, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 3, 4);
 
 	button = new_button ((MtpKey){ GTK_STOCK_GO_BACK, XK_BackSpace, 0 },

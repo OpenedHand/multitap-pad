@@ -1,5 +1,13 @@
 2008-01-25  Chris Lord  <chris@openedhand.com>
 
+	* gtk-im/immultipress.c:
+	Don't conflict with matchbox-im-invoker/multipress
+
+	* src/multitap-pad-main.c: (main):
+	Fix '5' key, various unimportant bits
+
+2008-01-25  Chris Lord  <chris@openedhand.com>
+
 	* data/im-multipress.conf:
 	Add keys for capital letters
 

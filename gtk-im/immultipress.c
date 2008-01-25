@@ -22,14 +22,13 @@
 #include <glib/gi18n.h>
 #include <string.h> /* For strcmp() */
 
-/*#define CONTEXT_ID "multipress"*/
-#define CONTEXT_ID "matchbox-im-invoker"
+#define CONTEXT_ID "mtp-im-invoker"
  
 /** NOTE: Change the default language from "" to "*" to enable this input method by default for all locales.
  */
 static const GtkIMContextInfo info = { 
   CONTEXT_ID,		   /* ID */
-  N_("Multipress"),     /* Human readable name */
+  N_("MTP IM Invoker"),     /* Human readable name */
   "",	   /* Translation domain. FIXME: Add translation bits, this should be GETTEXT_PACKAGE */
   MULTIPRESS_LOCALEDIR,	   /* Dir for bindtextdomain (not strictly needed for "gtk+"). Defined in the Makefile.am */
   "*"			   /* Languages for which this module is the default */
