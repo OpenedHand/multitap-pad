@@ -406,7 +406,7 @@ vfunc_filter_keypress (GtkIMContext *context, GdkEventKey *event)
 
       return TRUE; /* TRUE means that the event was handled. */
     }
-    else
+    else if (event->length > 0)
     {
       guint32 keyval_uchar;
 
@@ -414,7 +414,7 @@ vfunc_filter_keypress (GtkIMContext *context, GdkEventKey *event)
        * Just accept all other keypresses directly, but commit the
        * current preedit content first.
        */
-      if (multipress_context->compose_count > 0 && multipress_context->tentative_match && event->length == 0)
+      if (multipress_context->compose_count > 0 && multipress_context->tentative_match)
         accept_character (multipress_context, multipress_context->tentative_match);
 
       keyval_uchar = gdk_keyval_to_unicode (event->keyval);
@@ -432,7 +432,7 @@ vfunc_filter_keypress (GtkIMContext *context, GdkEventKey *event)
         accept_character (multipress_context, keyval_utf8);
 
         return TRUE; /* key handled */
-      } else if (event->length == 0) return TRUE;
+      }
     }
   }
 
