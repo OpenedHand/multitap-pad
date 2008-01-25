@@ -1,6 +1,11 @@
 2008-01-25  Chris Lord  <chris@openedhand.com>
 
 	* gtk-im/gtkimcontextmultipress.c: (vfunc_filter_keypress):
+	Another try (quite close before)
+
+2008-01-25  Chris Lord  <chris@openedhand.com>
+
+	* gtk-im/gtkimcontextmultipress.c: (vfunc_filter_keypress):
 	Unbreak modifier key handling, hopefully handle in the correct way
 
 2008-01-25  Chris Lord  <chris@openedhand.com>
