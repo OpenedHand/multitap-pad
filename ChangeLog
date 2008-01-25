@@ -1,5 +1,10 @@
 2008-01-25  Chris Lord  <chris@openedhand.com>
 
+	* data/im-multipress.conf:
+	Add keys for capital letters
+
+2008-01-25  Chris Lord  <chris@openedhand.com>
+
 	* src/multitap-pad-main.c: (hide_window_idle), (hide_window),
 	(show_window), (invoke_cb), (main):
 	Add button 1 to the buttons list, delay hiding the keypad slightly so
