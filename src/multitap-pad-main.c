@@ -16,11 +16,14 @@ typedef struct {
 } MtpKey;
 
 typedef struct {
+	GtkWidget *window;
 	gchar *orientation;
 	gchar *position;
 	
 	MtpMode mode;
 	gboolean change_mode;
+
+	guint hide_idle;
 
 	GtkWidget *alt_button;
 	
@@ -200,19 +203,50 @@ new_button (MtpKey key, MtpKey altkey, MtpKey capskey, gboolean icon,
 	return button;
 }
 
+static gboolean
+hide_window_idle (MtpData *data)
+{
+	gtk_widget_hide (data->window);
+	data->hide_idle = 0;
+	
+	return FALSE;
+}
+
+static void
+hide_window (MtpData *data)
+{
+	if (!data->hide_idle) {
+		data->hide_idle = g_timeout_add (
+			300, (GSourceFunc)hide_window_idle, data);
+	}
+}
+
+static void
+show_window (MtpData *data)
+{
+	if (data->hide_idle) {
+		g_source_remove (data->hide_idle);
+		data->hide_idle = 0;
+	}
+	gtk_widget_show (data->window);
+}
+
 static GdkFilterReturn
-invoke_cb (GdkXEvent *xevent, GdkEvent *event, GtkWidget *widget)
+invoke_cb (GdkXEvent *xevent, GdkEvent *event, MtpData *data)
 {
 	switch (((XEvent *)xevent)->xclient.data.l[0]) {
 	    case MTPRemoteShow :
-		gtk_widget_show (widget);
+		show_window (data);
 		break;
 	    case MTPRemoteHide :
-		gtk_widget_hide (widget);
+		hide_window (data);
 		break;
 	    case MTPRemoteToggle :
-		if (GTK_WIDGET_VISIBLE (widget)) gtk_widget_hide (widget);
-		else gtk_widget_show (widget);
+		if (GTK_WIDGET_VISIBLE (data->window)) {
+			hide_window (data);
+		} else {
+			show_window (data);
+		}
 		break;
 	    case MTPRemoteNone :
 		break;
@@ -258,7 +292,7 @@ int
 main (int argc, char **argv)
 {
 	MtpData data;
-	GtkWidget *window, *table, *button;
+	GtkWidget *table, *button;
 	GOptionContext *context;
 	static gboolean daemon = FALSE;
 	static gint plug = 0;
@@ -283,27 +317,29 @@ main (int argc, char **argv)
 	
 	/* Create FakeKey context */
 	data.fk = fakekey_init (gdk_x11_get_default_xdisplay ());
+	data.hide_idle = 0;
 	
 	/* Create main window */
 	if (plug <= 0) {
-		window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-		gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
-		gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
-		gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
-		gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
+		data.window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+		gtk_window_set_skip_pager_hint (GTK_WINDOW (data.window), TRUE);
+		gtk_window_set_skip_taskbar_hint (
+			GTK_WINDOW (data.window), TRUE);
+		gtk_window_set_decorated (GTK_WINDOW (data.window), FALSE);
+		gtk_window_set_accept_focus (GTK_WINDOW (data.window), FALSE);
 
 		/* Set size and position */
-		screen_size_changed_cb (gdk_screen_get_default (), window);
+		screen_size_changed_cb (gdk_screen_get_default (), data.window);
 	
 		g_signal_connect (gdk_screen_get_default (), "size-changed",
-			G_CALLBACK (screen_size_changed_cb), window);
+			G_CALLBACK (screen_size_changed_cb), data.window);
 
-		g_signal_connect (window, "delete-event",
+		g_signal_connect (data.window, "delete-event",
 			G_CALLBACK (gtk_main_quit), NULL);
 	} else {
 		g_message ("Plugging into socket %d", plug);
-		window = gtk_plug_new (plug);
-		g_signal_connect (window, "destroy",
+		data.window = gtk_plug_new (plug);
+		g_signal_connect (data.window, "destroy",
 			G_CALLBACK (gtk_main_quit), NULL);
 	}
 	
@@ -313,7 +349,7 @@ main (int argc, char **argv)
 			GDK_SUBSTRUCTURE_MASK);
 		gdk_add_client_message_filter (
 			gdk_atom_intern ("_MTP_IM_INVOKER_COMMAND", FALSE),
-			(GdkFilterFunc)invoke_cb, window);
+			(GdkFilterFunc)invoke_cb, &data);
 	}
 	
 	/* Create keypad table */
@@ -324,12 +360,13 @@ main (int argc, char **argv)
 		(MtpKey){ "1", XK_1, 0 },
 		(MtpKey){ NULL, XK_period, 0}, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 0, 1);
+	data.buttons = g_list_prepend (NULL, button);
 
 	button = new_button ((MtpKey){ "<small>2\nabc</small>", XK_a, 0 },
 		(MtpKey){ "2", XK_2, 0 },
 		(MtpKey){ "<small>2\nABC</small>", XK_A, 0 }, FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 0, 1);
-	data.buttons = g_list_prepend (NULL, button);
+	data.buttons = g_list_prepend (data.buttons, button);
 
 	button = new_button ((MtpKey){ "<small>3\ndef</small>", XK_d, 0 },
 		(MtpKey){ "3", XK_3, 0 },
@@ -408,11 +445,11 @@ main (int argc, char **argv)
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 6, 7, 2, 4);
 
 	/* Pack and show widgets */
-	gtk_container_add (GTK_CONTAINER (window), table);
+	gtk_container_add (GTK_CONTAINER (data.window), table);
 	gtk_widget_show_all (table);
 
 	/* Show window/plug */
-	if (!daemon) gtk_widget_show_all (window);
+	if (!daemon) gtk_widget_show_all (data.window);
 	
 	/* Start */
 	gtk_main ();
