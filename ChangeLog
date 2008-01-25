@@ -1,5 +1,10 @@
 2008-01-25  Chris Lord  <chris@openedhand.com>
 
+	* gtk-im/gtkimcontextmultipress.c: (vfunc_filter_keypress):
+	Unbreak modifier key handling, hopefully handle in the correct way
+
+2008-01-25  Chris Lord  <chris@openedhand.com>
+
 	* data/im-multipress.conf:
 	Fix '0' key
 
