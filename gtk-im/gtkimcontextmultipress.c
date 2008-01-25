@@ -406,7 +406,7 @@ vfunc_filter_keypress (GtkIMContext *context, GdkEventKey *event)
 
       return TRUE; /* TRUE means that the event was handled. */
     }
-    else if ((event->keyval != GDK_Shift_L) && (event->keyval != GDK_Shift_R))
+    else
     {
       guint32 keyval_uchar;
 
@@ -433,9 +433,6 @@ vfunc_filter_keypress (GtkIMContext *context, GdkEventKey *event)
 
         return TRUE; /* key handled */
       }
-    } else {
-      /* Accept shift keys without committing preedit */
-      return TRUE;
     }
   }
 
