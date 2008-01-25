@@ -364,49 +364,57 @@ main (int argc, char **argv)
 
 	button = new_button ((MtpKey){ "<small>2\nabc</small>", XK_a, 0 },
 		(MtpKey){ "2", XK_2, 0 },
-		(MtpKey){ "<small>2\nABC</small>", XK_A, 0 }, FALSE, &data);
+		(MtpKey){ "<small>2\nABC</small>", XK_a, FAKEKEYMOD_SHIFT },
+		FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 0, 1);
 	data.buttons = g_list_prepend (data.buttons, button);
 
 	button = new_button ((MtpKey){ "<small>3\ndef</small>", XK_d, 0 },
 		(MtpKey){ "3", XK_3, 0 },
-		(MtpKey){ "<small>3\nDEF</small>", XK_D, 0 }, FALSE, &data);
+		(MtpKey){ "<small>3\nDEF</small>", XK_d, FAKEKEYMOD_SHIFT },
+		FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 0, 1);
 	data.buttons = g_list_prepend (data.buttons, button);
 
 	button = new_button ((MtpKey){ "<small>4\nghi</small>", XK_g, 0 },
 		(MtpKey){ "4", XK_4, 0 },
-		(MtpKey){ "<small>4\nGHI</small>", XK_G, 0 }, FALSE, &data);
+		(MtpKey){ "<small>4\nGHI</small>", XK_g, FAKEKEYMOD_SHIFT },
+		FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 1, 2);
 	data.buttons = g_list_prepend (data.buttons, button);
 
 	button = new_button ((MtpKey){ "<small>5\njkl</small>", XK_j, 0 },
 		(MtpKey){ "5", XK_5, 0 },
-		(MtpKey){ "<small>5\nJKL</small>", XK_J, 0 }, FALSE, &data);
+		(MtpKey){ "<small>5\nJKL</small>", XK_j, FAKEKEYMOD_SHIFT },
+		FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 1, 2);
 	data.buttons = g_list_prepend (data.buttons, button);
 
 	button = new_button ((MtpKey){ "<small>6\nmno</small>", XK_m, 0 },
 		(MtpKey){ "6", XK_6, 0 }, 
-		(MtpKey){ "<small>6\nMNO</small>", XK_M, 0 }, FALSE, &data);
+		(MtpKey){ "<small>6\nMNO</small>", XK_m, FAKEKEYMOD_SHIFT },
+		FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 1, 2);
 	data.buttons = g_list_prepend (data.buttons, button);
 
 	button = new_button ((MtpKey){ "<small>7\npqrs</small>", XK_p, 0 },
 		(MtpKey){ "7", XK_7, 0 },
-		(MtpKey){ "<small>7\nPQRS</small>", XK_P, 0 }, FALSE, &data);
+		(MtpKey){ "<small>7\nPQRS</small>", XK_p, FAKEKEYMOD_SHIFT },
+		FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 2, 2, 3);
 	data.buttons = g_list_prepend (data.buttons, button);
 
 	button = new_button ((MtpKey){ "<small>8\ntuv</small>", XK_t, 0 },
 		(MtpKey){ "8", XK_8, 0 },
-		(MtpKey){ "<small>8\nTUV</small>", XK_T, 0 }, FALSE, &data);
+		(MtpKey){ "<small>8\nTUV</small>", XK_t, FAKEKEYMOD_SHIFT },
+		FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 2, 4, 2, 3);
 	data.buttons = g_list_prepend (data.buttons, button);
 
 	button = new_button ((MtpKey){ "<small>9\nwxyz</small>", XK_w, 0 },
 		(MtpKey){ "9", XK_9, 0 },
-		(MtpKey){ "<small>9\nWXYZ</small>", XK_W, 0 }, FALSE, &data);
+		(MtpKey){ "<small>9\nWXYZ</small>", XK_w, FAKEKEYMOD_SHIFT },
+		FALSE, &data);
 	gtk_table_attach_defaults (GTK_TABLE (table), button, 4, 6, 2, 3);
 	data.buttons = g_list_prepend (data.buttons, button);
 

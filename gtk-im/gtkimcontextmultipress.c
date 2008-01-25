@@ -354,6 +354,8 @@ vfunc_filter_keypress (GtkIMContext *context, GdkEventKey *event)
     KeySequence* possible = NULL;
 
     /* printf("debug: multipress_context->compose_count=%d\n", multipress_context->compose_count); */
+    /* If the key has no text representation, do nothing - this is probably a modifier key */
+    if (event->length == 0) return TRUE;
 
     /* Check whether the current key is the same as previously entered,
      *  because if it is not then we should accept the previous one, and start a new character.

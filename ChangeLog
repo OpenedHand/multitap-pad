@@ -1,5 +1,16 @@
 2008-01-25  Chris Lord  <chris@openedhand.com>
 
+	* data/im-multipress.conf:
+	Fix '0' key
+
+	* gtk-im/gtkimcontextmultipress.c: (vfunc_filter_keypress):
+	Hopefully fix capital letters (ignore modifier key presses)
+
+	* src/multitap-pad-main.c: (main):
+	Use shift + key to enter capital letters
+
+2008-01-25  Chris Lord  <chris@openedhand.com>
+
 	* gtk-im/immultipress.c:
 	Don't conflict with matchbox-im-invoker/multipress
 
