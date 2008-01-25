@@ -1,6 +1,11 @@
 2008-01-25  Chris Lord  <chris@openedhand.com>
 
 	* gtk-im/gtkimcontextmultipress.c: (vfunc_filter_keypress):
+	Hopefully really fix shift keys
+
+2008-01-25  Chris Lord  <chris@openedhand.com>
+
+	* gtk-im/gtkimcontextmultipress.c: (vfunc_filter_keypress):
 	And again...
 
 2008-01-25  Chris Lord  <chris@openedhand.com>
