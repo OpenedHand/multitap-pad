@@ -247,7 +247,7 @@ GtkIMContext
  *  The result is an null-terminated array of gchar*. It should not be freed by the caller.
  */
 static KeySequence* 
-lookup_characters (GtkImContextMultipress *multipress_context, guint keypress)
+lookup_characters (GtkImContextMultipress *multipress_context, gunichar keypress)
 {
 
   /* Find the matching KeySequence, so that the caller can look at the possible characters for this keypress: */
@@ -257,7 +257,7 @@ lookup_characters (GtkImContextMultipress *multipress_context, guint keypress)
     KeySequence* item = multipress_context->key_sequences[i];
 
     /* Just compare the first item, to match the keyval: */
-    if (keypress == item->key_press)
+    if (keypress == g_utf8_get_char (item->characters[0]))
       return item;
   }
 
@@ -349,7 +349,7 @@ vfunc_filter_keypress (GtkIMContext *context, GdkEventKey *event)
 
   multipress_context = gtk_im_context_multipress (context);
 
-  if (event->type == GDK_KEY_PRESS)
+  if ((event->type == GDK_KEY_PRESS) && (event->keyval != GDK_Shift_L) && (event->keyval != GDK_Shift_R))
   {
     KeySequence* possible = NULL;
 
@@ -369,8 +369,8 @@ vfunc_filter_keypress (GtkIMContext *context, GdkEventKey *event)
     }
 
     /* Decide what character this key press would choose: */
-    if (!passthrough_enabled_for_window (event->window))
-      possible = lookup_characters (multipress_context, event->keyval); /* Not to be freed. */
+    if (!passthrough_enabled_for_window (event->window) && event->string)
+      possible = lookup_characters (multipress_context, g_utf8_get_char (event->string)); /* Not to be freed. */
 
     if (possible)
     {

@@ -1,3 +1,13 @@
+2008-01-28  Chris Lord  <chris@openedhand.com>
+
+	* gtk-im/gtkimcontextmultipress.c: (lookup_characters),
+	(vfunc_filter_keypress):
+	Ignore shift keys. Also match against translated utf8 character
+	instead of keysym.
+
+	* src/multitap-pad-main.c: (main):
+	Send XK_X instead of shift + XK_x (makes no odds, but code is shorter)
+
 2008-01-25  Chris Lord  <chris@openedhand.com>
 
 	* gtk-im/gtkimcontextmultipress.c: (vfunc_filter_keypress):
