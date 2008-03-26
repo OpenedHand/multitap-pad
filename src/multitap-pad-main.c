@@ -322,6 +322,7 @@ main (int argc, char **argv)
 	/* Create main window */
 	if (plug <= 0) {
 		data.window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+		gtk_widget_set_name (data.window, "multi-tap-window");
 		gtk_window_set_skip_pager_hint (GTK_WINDOW (data.window), TRUE);
 		gtk_window_set_skip_taskbar_hint (
 			GTK_WINDOW (data.window), TRUE);

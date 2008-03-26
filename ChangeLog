@@ -1,5 +1,11 @@
 2008-03-26  Thomas Wood  <thomas@openedhand.com>
 
+	* configure.ac: Fix --enable-applet switch
+	* src/multitap-pad-main.c: (main): Add a name to the top level window
+	for theming purposes
+
+2008-03-26  Thomas Wood  <thomas@openedhand.com>
+
 	* Makefile.am:
 	* configure.ac:
 
