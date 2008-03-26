@@ -1,3 +1,10 @@
+2008-03-26  Thomas Wood  <thomas@openedhand.com>
+
+	* gtk-im/Makefile.in:
+	* src/Makefile.in:
+
+	Delete auto-generated files from SVN
+
 2008-01-28  Chris Lord  <chris@openedhand.com>
 
 	* gtk-im/gtkimcontextmultipress.c: (lookup_characters),
