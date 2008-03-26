@@ -10,7 +10,17 @@ AC_PROG_CC
 AC_STDC_HEADERS
 AC_PROG_LIBTOOL
 
-PKG_CHECK_MODULES(MTP, gtk+-2.0 >= 2.6.0 libfakekey matchbox-panel)
+PKG_CHECK_MODULES(MTP, gtk+-2.0 >= 2.6.0 libfakekey)
+
+
+BUILD_APPLET=
+AC_ARG_ENABLE(gconf, AC_HELP_STRING([--enable-applet],[Build matchbox-panel
+applet [[default=yes]]]), [want_applet="$enableval"], [want_applet=yes])
+if test "x$want_applet" = "xyes"; then
+  PKG_CHECK_MODULES(MBP, matchbox-panel)
+  BUILD_APPLET=applet
+fi
+AC_SUBST(BUILD_APPLET)
 
 AC_OUTPUT([
 Makefile

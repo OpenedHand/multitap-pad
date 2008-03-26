@@ -1,5 +1,12 @@
 2008-03-26  Thomas Wood  <thomas@openedhand.com>
 
+	* Makefile.am:
+	* configure.ac:
+
+	Make matchbox-panel applet optional
+
+2008-03-26  Thomas Wood  <thomas@openedhand.com>
+
 	* gtk-im/Makefile.in:
 	* src/Makefile.in:
 
